@@ -6,6 +6,8 @@ class ADMMOptimizer:
         self.height = height
         self.width = width
         self.b = self._center_pad(b, padding_scale * b.shape[2], padding_scale * b.shape[3])
+        self.mask = torch.zeros_like(b)
+        self.mask[..., self.bottom:self.bottom + self.height, self.left:self.left + self.width] = 1
         self.v = torch.zeros_like(self.b)
         self.u = torch.zeros_like(self.b)
         self.u = torch.stack([self.u, self.u], dim=1)
@@ -38,8 +40,8 @@ class ADMMOptimizer:
             self._Phi(self.x) + self.alpha2 / self.mu2
         )
         self.v = (
-            self.alpha1 + self.mu1 * self._H(self.x) + self.b
-        ) / (1 + self.mu1)
+            self.alpha1 + self.mu1 * self._H(self.x) + self.b * self.mask
+        ) / (self.mask + self.mu1)
         self.w = torch.clamp(self.alpha3 / self.mu3 + self.x, min=0)
         R = (
             self.mu3 * self.w - self.alpha3 +
