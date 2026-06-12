@@ -16,6 +16,7 @@ class ADMMOptimizer:
         self.alpha2 = torch.stack([self.alpha2, self.alpha2], dim=1)
         self.alpha3 = torch.zeros_like(self.b)
         self.H = self._center_pad(H, padding_scale * H.shape[2], padding_scale * H.shape[3])
+        self.H = torch.fft.ifftshift(self.H, dim=(-2, -1))
         self.H_fft = torch.fft.fft2(self.H)
         self.mu1 = mu1
         self.mu2 = mu2

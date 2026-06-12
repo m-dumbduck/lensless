@@ -18,3 +18,4 @@ inferencer:
   save_path: "example" # any name here, can be a dataset name
   seed: 1
   skip_model_load: True
+  log_step: 1
