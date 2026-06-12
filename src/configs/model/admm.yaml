@@ -3,4 +3,4 @@ n_iters: 50
 mu1: 1e-4
 mu2: 1e-4
 mu3: 1e-4
-tau: 1e-4
+tau: 0
