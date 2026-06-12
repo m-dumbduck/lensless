@@ -1,5 +1,12 @@
+import io
+from time import sleep
+
+import numpy as np
 import torch
+from PIL import Image
+from matplotlib import pyplot as plt
 from tqdm.auto import tqdm
+from torchvision.utils import save_image
 
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
@@ -22,6 +29,8 @@ class Inferencer(BaseTrainer):
         dataloaders,
         save_path,
         metrics=None,
+        writer=None,
+        logger=None,
         batch_transforms=None,
         skip_model_load=False,
     ):
@@ -62,6 +71,11 @@ class Inferencer(BaseTrainer):
         # define dataloaders
         self.evaluation_dataloaders = {k: v for k, v in dataloaders.items()}
 
+        # logging
+        self.logger = logger
+        self.writer = writer
+        self.log_step = config.inferencer.get("log_step", 50)
+
         # path definition
 
         self.save_path = save_path
@@ -71,7 +85,7 @@ class Inferencer(BaseTrainer):
         if self.metrics is not None:
             self.evaluation_metrics = MetricTracker(
                 *[m.name for m in self.metrics["inference"]],
-                writer=None,
+                writer=self.writer,
             )
         else:
             self.evaluation_metrics = None
@@ -129,28 +143,61 @@ class Inferencer(BaseTrainer):
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
 
-        batch_size = batch["logits"].shape[0]
+        batch_size = batch["lensed"].shape[0]
         current_id = batch_idx * batch_size
 
         for i in range(batch_size):
             # clone because of
             # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
-
             output_id = current_id + i
-
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
-
             if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                save_dir = self.save_path / part / f"{output_id}"
+                save_dir.mkdir(parents=True, exist_ok=True)
+                save_image(batch["lensless"][i].permute(2, 0, 1), save_dir / f"lensless.png")
+                save_image(batch["lensed"][i].permute(2, 0, 1), save_dir / f"lensed.png")
+                save_image(batch["reconstructed"][i].permute(2, 0, 1), save_dir / f"reconstructed.png")
 
         return batch
+
+    def _log_batch(self, batch_idx, batch, mode):
+        if self.writer is None:
+            return
+
+        lensless = batch["lensless"][0]
+        reconstructed = batch["reconstructed"][0]
+        lensed = batch["lensed"][0]
+
+        self.writer.add_image(
+            f"{mode}/comparison",
+            self.make_comparison_figure(lensless, reconstructed, lensed),
+        )
+
+    def make_comparison_figure(self, lensless, reconstructed, lensed):
+        lensless = lensless.detach().cpu().numpy()
+        reconstructed = reconstructed.detach().cpu().numpy()
+        lensed = lensed.detach().cpu().numpy()
+
+        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+        axes[0].imshow(lensless)
+        axes[0].set_title("Lensless")
+        axes[0].axis("off")
+
+        axes[1].imshow(reconstructed)
+        axes[1].set_title("Reconstructed")
+        axes[1].axis("off")
+
+        axes[2].imshow(lensed)
+        axes[2].set_title("Lensed")
+        axes[2].axis("off")
+
+        fig.tight_layout()
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        plt.close(fig)
+        buf.seek(0)
+        return np.array(Image.open(buf).convert("RGB"))
 
     def _inference_part(self, part, dataloader):
         """
@@ -184,5 +231,12 @@ class Inferencer(BaseTrainer):
                     part=part,
                     metrics=self.evaluation_metrics,
                 )
+                if self.writer is not None and batch_idx % self.log_step == 0:
+                    self.writer.set_step(batch_idx, part)
+                    self._log_batch(batch_idx, batch, part)
+
+        if self.writer is not None and self.evaluation_metrics is not None:
+            self.writer.set_step(len(dataloader), part)
+            self._log_scalars(self.evaluation_metrics)
 
         return self.evaluation_metrics.result()

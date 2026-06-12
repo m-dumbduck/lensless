@@ -1,0 +1,6 @@
+_target_: src.model.ADMM
+n_iters: 10
+mu1: 1e-4
+mu2: 1e-4
+mu3: 1e-4
+tau: 2e-4

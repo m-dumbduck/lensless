@@ -1,0 +1,20 @@
+defaults:
+  - model: admm
+  - metrics: base
+  - writer: cometml
+  - datasets: lensless_eval
+  - dataloader: base
+  - transforms: base
+  - _self_
+
+trainer:
+  save_dir: "inference_logs"
+  override: True
+  resume_from: null
+
+inferencer:
+  device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"
+  save_path: "example" # any name here, can be a dataset name
+  seed: 1
+  skip_model_load: True

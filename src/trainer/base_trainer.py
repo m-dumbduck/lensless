@@ -423,7 +423,7 @@ class BaseTrainer:
         return base.format(current, total, 100.0 * current / total)
 
     @abstractmethod
-    def _log_batch(self, batch_idx, batch, mode="train"):
+    def _log_batch(self, batch_idx, batch, mode):
         """
         Abstract method. Should be defined in the nested Trainer Class.
 
