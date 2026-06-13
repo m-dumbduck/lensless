@@ -9,4 +9,5 @@ class StructuralSimilarityIndexMeasureMetric(BaseMetric):
         self.ssim_metric = StructuralSimilarityIndexMeasure(data_range=data_range)
 
     def __call__(self, reconstructed: torch.Tensor, lensed: torch.Tensor, **kwargs):
+        self.ssim_metric = self.ssim_metric.to(reconstructed.device)
         return self.ssim_metric(reconstructed, lensed).detach().cpu().item()
