@@ -11,4 +11,4 @@ class LPIPSMetric(BaseMetric):
 
     def __call__(self, reconstructed: torch.Tensor, lensed: torch.Tensor, **kwargs):
         self.lpips_model = self.lpips_model.to(reconstructed.device)
-        return self.lpips_model(reconstructed, lensed, normalize=self.normalize).detach().cpu().item()
+        return self.lpips_model(reconstructed, lensed, normalize=self.normalize).detach().mean().cpu().item()
