@@ -3,3 +3,10 @@ train: # metrics that are calculated during training
   - _target_: src.metrics.MSEMetric
 inference: # metrics that are calculated during inference (eval)
   - _target_: src.metrics.MSEMetric
+  - _target_: src.metrics.LPIPSMetric
+    net: "vgg"
+    normalize: True
+  - _target_: src.metrics.PeakSignalNoiseRatioMetric
+    data_range: 1
+  - _target_: src.metrics.StructuralSimilarityIndexMeasureMetric
+    data_range: 1

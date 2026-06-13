@@ -52,6 +52,7 @@ def get_cropped_lensed(lensed, lensless):
 
 def get_roi(image):
     return image[
+        ...,
         ALIGNMENT["top_left"][0] : ALIGNMENT["top_left"][0]
         + ALIGNMENT["height"],
         ALIGNMENT["top_left"][1] : ALIGNMENT["top_left"][1]

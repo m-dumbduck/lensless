@@ -15,10 +15,10 @@ class ADMM(BaseModel):
 
     def forward(self, lensless, psf, **batch):
         optimizer = ADMMOptimizer(
-            b=lensless.permute(0, 3, 1, 2),
-            H=psf.permute(0, 3, 1, 2),
+            b=lensless,
+            H=psf,
             mu1=self.mu1, mu2=self.mu2, mu3=self.mu3, tau=self.tau
         )
         for _ in range(self.n_iters):
             optimizer.step()
-        return {"reconstructed": optimizer.get_result().permute(0, 2, 3, 1)}
+        return {"reconstructed": optimizer.get_result()}

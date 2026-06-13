@@ -90,10 +90,8 @@ class BaseDataset(Dataset, ABC):
                 instance transform).
         """
         if self.instance_transforms is not None:
-            for transform_name in self.instance_transforms.keys():
-                instance_data[transform_name] = self.instance_transforms[
-                    transform_name
-                ](instance_data[transform_name])
+            for transform in self.instance_transforms:
+                instance_data = transform(instance_data)
         return instance_data
 
     @staticmethod

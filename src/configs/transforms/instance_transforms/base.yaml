@@ -1,6 +1,24 @@
-train: null
+train:
 #  data_object: # name of the tensor on which we apply transform
 #    _target_: torchvision.transforms.v2.Compose
 #    transforms:
 #      - _target_: src.transforms.RandomScale1D
-inference: null
+  - _target_: src.transforms.Permute
+    data_object_key: "lensed"
+    order: [ 2, 0, 1 ]
+  - _target_: src.transforms.Permute
+    data_object_key: "lensless"
+    order: [ 2, 0, 1 ]
+  - _target_: src.transforms.Permute
+    data_object_key: "psf"
+    order: [ 0, 3, 1, 2 ]
+inference:
+  - _target_: src.transforms.Permute
+    data_object_key: "lensed"
+    order: [ 2, 0, 1 ]
+  - _target_: src.transforms.Permute
+    data_object_key: "lensless"
+    order: [ 2, 0, 1 ]
+  - _target_: src.transforms.Permute
+    data_object_key: "psf"
+    order: [ 0, 3, 1, 2 ]

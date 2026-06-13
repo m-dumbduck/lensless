@@ -5,12 +5,16 @@ numpy==1.26.4
 tqdm
 matplotlib
 pandas
-wandb
-comet_ml
-hydra-core
+
+lpips
+
 waveprop @ git+https://github.com/ebezzam/waveprop.git
 slm_controller @ git+https://github.com/ebezzam/slm-controller.git
 perlin_numpy @ git+https://github.com/pvigier/perlin-numpy.git@5e26837db14042e51166eb6cad4c0df2c1907016
+
+wandb
+comet_ml
+hydra-core
 
 black
 isort

@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from tqdm.auto import tqdm
 from torchvision.utils import save_image
 
+from src.lensless_helpers.preprocessor import get_roi
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -136,6 +137,9 @@ class Inferencer(BaseTrainer):
         outputs = self.model(**batch)
         batch.update(outputs)
 
+        batch["lensed"] = get_roi(batch["lensed"])
+        batch["reconstructed"] = get_roi(batch["reconstructed"])
+
         if metrics is not None:
             for met in self.metrics["inference"]:
                 metrics.update(met.name, met(**batch))
@@ -153,9 +157,9 @@ class Inferencer(BaseTrainer):
             if self.save_path is not None:
                 save_dir = self.save_path / part / f"{output_id}"
                 save_dir.mkdir(parents=True, exist_ok=True)
-                save_image(batch["lensless"][i].permute(2, 0, 1), save_dir / f"lensless.png")
-                save_image(batch["lensed"][i].permute(2, 0, 1), save_dir / f"lensed.png")
-                save_image(batch["reconstructed"][i].permute(2, 0, 1), save_dir / f"reconstructed.png")
+                save_image(batch["lensless"][i], save_dir / f"lensless.png")
+                save_image(batch["lensed"][i], save_dir / f"lensed.png")
+                save_image(batch["reconstructed"][i], save_dir / f"reconstructed.png")
 
         return batch
 
@@ -173,9 +177,9 @@ class Inferencer(BaseTrainer):
         )
 
     def make_comparison_figure(self, lensless, reconstructed, lensed):
-        lensless = lensless.detach().cpu().numpy()
-        reconstructed = reconstructed.detach().cpu().numpy()
-        lensed = lensed.detach().cpu().numpy()
+        lensless = lensless.permute(1, 2, 0).detach().cpu().numpy()
+        reconstructed = reconstructed.permute(1, 2, 0).detach().cpu().numpy()
+        lensed = lensed.permute(1, 2, 0).detach().cpu().numpy()
 
         fig, axes = plt.subplots(1, 3, figsize=(12, 4))
 
