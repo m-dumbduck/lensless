@@ -22,7 +22,7 @@ class CompositeLoss(nn.Module):
     def forward(self, **batch):
         mse_loss = self.mse_loss(**batch)["loss"]
         lpips_loss = self.lpips_loss(**batch)["loss"]
-        loss = self.mse_loss_weight * mse_loss + self.lpips_loss * lpips_loss
+        loss = self.mse_loss_weight * mse_loss + self.lpips_loss_weight * lpips_loss
         return {
             "loss": loss,
             "mse_loss": mse_loss,

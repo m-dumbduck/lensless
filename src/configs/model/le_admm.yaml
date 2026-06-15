@@ -1,2 +1,6 @@
-_target_: src.model.ADMM
+_target_: src.model.LeADMM
 n_iters: 5
+mu1_init: 1e-4
+mu2_init: 1e-4
+mu3_init: 1e-4
+tau_init: 1e-4

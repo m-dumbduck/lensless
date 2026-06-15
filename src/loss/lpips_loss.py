@@ -1,11 +1,13 @@
 import torch
+import lpips
 from torch import nn
 
 
 class LPIPSLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, net, normalize=False):
         super().__init__()
-        self.loss = nn.MSELoss()
+        self.lpips_model = lpips.LPIPS(net=net)
+        self.normalize = normalize
 
-    def forward(self, lensed: torch.Tensor, restored: torch.Tensor, **batch):
-        return {"loss": self.loss(lensed, restored)}
+    def forward(self, lensed: torch.Tensor, reconstructed: torch.Tensor, **batch):
+        return {"loss": self.lpips_model(reconstructed, lensed, normalize=self.normalize).mean()}

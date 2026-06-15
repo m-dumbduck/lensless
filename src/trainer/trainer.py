@@ -1,5 +1,7 @@
+from src.lensless_helpers.preprocessor import get_roi
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
+from src.utils.drawer_utils import make_comparison_figure
 
 
 class Trainer(BaseTrainer):
@@ -36,6 +38,8 @@ class Trainer(BaseTrainer):
 
         outputs = self.model(**batch)
         batch.update(outputs)
+        batch["reconstructed"] = get_roi(batch["reconstructed"])
+        batch["lensed"] = get_roi(batch["lensed"])
 
         all_losses = self.criterion(**batch)
         batch.update(all_losses)
@@ -71,6 +75,19 @@ class Trainer(BaseTrainer):
         # such as audio, text or images, for example
 
         # logging scheme might be different for different partitions
+
+        if self.writer is None:
+            return
+
+        lensless = batch["lensless"][0]
+        reconstructed = batch["reconstructed"][0]
+        lensed = batch["lensed"][0]
+
+        self.writer.add_image(
+            f"{mode}/comparison",
+            make_comparison_figure(lensless, reconstructed, lensed),
+        )
+
         if mode == "train":  # the method is called only every self.log_step steps
             # Log Stuff
             pass

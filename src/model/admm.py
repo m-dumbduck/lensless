@@ -17,8 +17,7 @@ class ADMM(BaseModel):
         optimizer = ADMMOptimizer(
             b=lensless,
             H=psf,
-            mu1=self.mu1, mu2=self.mu2, mu3=self.mu3, tau=self.tau
         )
         for _ in range(self.n_iters):
-            optimizer.step()
+            optimizer.step(self.mu1, self.mu2, self.mu3, self.tau)
         return {"reconstructed": optimizer.get_result()}

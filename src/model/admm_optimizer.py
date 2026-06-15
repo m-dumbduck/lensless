@@ -1,7 +1,7 @@
 import torch
 
 class ADMMOptimizer:
-    def __init__(self, b: torch.Tensor, H: torch.Tensor, mu1: float, mu2: float, mu3: float, tau: float, padding_scale: int=2):
+    def __init__(self, b: torch.Tensor, H: torch.Tensor, padding_scale: int=2):
         B, C, height, width = b.shape
         self.height = height
         self.width = width
@@ -20,38 +20,36 @@ class ADMMOptimizer:
         self.H = self._center_pad(H, padding_scale * H.shape[2], padding_scale * H.shape[3])
         self.H = torch.fft.ifftshift(self.H, dim=(-2, -1))
         self.H_fft = torch.fft.fft2(self.H)
-        self.mu1 = mu1
-        self.mu2 = mu2
-        self.mu3 = mu3
-        self.tau = tau
         delta = torch.zeros(1, 1, *self.b.shape[-2:], device=self.b.device)
         delta[..., 0, 0] = 1
         Dx_fft = torch.fft.fft2(self._Dx(delta))
         Dy_fft = torch.fft.fft2(self._Dy(delta))
-        PhiT_Phi_fft = torch.abs(Dx_fft) ** 2 + torch.abs(Dy_fft) ** 2
-        self.lst_sq_denom_fft = (
-            self.mu1 * torch.abs(self.H_fft) ** 2 +
-            self.mu2 * torch.abs(PhiT_Phi_fft) +
-            self.mu3
-        )
+        self.PhiT_Phi_fft = torch.abs(Dx_fft) ** 2 + torch.abs(Dy_fft) ** 2
 
-    def step(self):
+    def step(self, mu1, mu2, mu3, tau):
         self.u = self._soft_thresholding(
-            self._Phi(self.x) + self.alpha2 / self.mu2
+            self._Phi(self.x) + self.alpha2 / mu2,
+            mu2,
+            tau
         )
         self.v = (
-            self.alpha1 + self.mu1 * self._H(self.x) + self.b * self.mask
-        ) / (self.mask + self.mu1)
-        self.w = torch.clamp(self.alpha3 / self.mu3 + self.x, min=0)
+            self.alpha1 + mu1 * self._H(self.x) + self.b * self.mask
+        ) / (self.mask + mu1)
+        self.w = torch.clamp(self.alpha3 / mu3 + self.x, min=0)
         R = (
-            self.mu3 * self.w - self.alpha3 +
-            self._PhiT(self.mu2 * self.u - self.alpha2) +
-            self._HT(self.mu1 * self.v - self.alpha1)
+            mu3 * self.w - self.alpha3 +
+            self._PhiT(mu2 * self.u - self.alpha2) +
+            self._HT(mu1 * self.v - self.alpha1)
         )
-        self.x = torch.fft.ifft2(torch.fft.fft2(R) / self.lst_sq_denom_fft).real
-        self.alpha1 = self.alpha1 + self.mu1 * (self._H(self.x) - self.v)
-        self.alpha2 = self.alpha2 + self.mu2 * (self._Phi(self.x) - self.u)
-        self.alpha3 = self.alpha3 + self.mu3 * (self.x - self.w)
+        lst_sq_denom_fft = (
+            mu1 * torch.abs(self.H_fft) ** 2 +
+            mu2 * torch.abs(self.PhiT_Phi_fft) +
+            mu3
+        )
+        self.x = torch.fft.ifft2(torch.fft.fft2(R) / lst_sq_denom_fft).real
+        self.alpha1 = self.alpha1 + mu1 * (self._H(self.x) - self.v)
+        self.alpha2 = self.alpha2 + mu2 * (self._Phi(self.x) - self.u)
+        self.alpha3 = self.alpha3 + mu3 * (self.x - self.w)
 
     def get_result(self):
         return self.x[..., self.bottom:self.bottom + self.height, self.left:self.left + self.width]
@@ -80,8 +78,8 @@ class ADMMOptimizer:
     def _PhiT(self, X):
         return self._DxT(X[:, 0]) + self._DyT(X[:, 1])
 
-    def _soft_thresholding(self, X):
-        return torch.sign(X) * torch.clamp(abs(X) - self.tau / self.mu2, min=0)
+    def _soft_thresholding(self, X, mu2, tau):
+        return torch.sign(X) * torch.clamp(torch.abs(X) - tau / mu2, min=0)
 
     def _center_pad(self, X, height, width):
         B, C, H, W = X.shape
