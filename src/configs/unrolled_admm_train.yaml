@@ -1,5 +1,5 @@
 defaults:
-  - model: le_admm
+  - model: unrolled_admm
   - writer: cometml
   - metrics: base
   - datasets: lensless
@@ -28,7 +28,7 @@ loss_function:
   lpips_loss_weight: 1
 
 writer:
-  run_name: "le_admm"
+  run_name: "unrolled_admm_train"
 
 trainer:
   log_step: 1

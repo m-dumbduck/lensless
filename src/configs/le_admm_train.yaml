@@ -1,0 +1,43 @@
+defaults:
+  - model: le_admm
+  - writer: cometml
+  - metrics: base
+  - datasets: lensless
+  - dataloader: base
+  - transforms: base
+  - _self_
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-4
+
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.LambdaLR
+  lr_lambda:
+    _target_: src.scheduler.ConstantLRLambda
+
+loss_function:
+  _target_: src.loss.CompositeLoss
+  mse_loss:
+    _target_: src.loss.MSELoss
+  mse_loss_weight: 1
+  lpips_loss:
+    _target_: src.loss.LPIPSLoss
+    net: vgg
+    normalize: true
+  lpips_loss_weight: 1
+
+writer:
+  run_name: "le_admm_train"
+
+trainer:
+  log_step: 1
+  n_epochs: 5
+  epoch_len: 500
+  device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
+  resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
+  device: auto # device name or "auto"
+  override: True # if True, will override the previous run with the same name
+  save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
+  save_dir: "saved"
+  seed: 1

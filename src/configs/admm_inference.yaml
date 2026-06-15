@@ -12,6 +12,9 @@ trainer:
   override: True
   resume_from: null
 
+writer:
+  run_name: "admm_inference"
+
 inferencer:
   device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
   device: auto # device name or "auto"

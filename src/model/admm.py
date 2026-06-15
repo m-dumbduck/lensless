@@ -1,7 +1,6 @@
-from torch import nn
 import torch
-from src.model.base_model import BaseModel
-from src.model.admm_optimizer import ADMMOptimizer
+from src.model.base_model.base_model import BaseModel
+from src.model.optimizers.admm_optimizer import ADMMOptimizer
 
 
 class ADMM(BaseModel):
