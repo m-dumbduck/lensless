@@ -11,4 +11,3 @@ test:
   masks_path: "data/DigiCam-Mirflickr-MultiMask-10K/masks"
   split: "test"
   instance_transforms: ${transforms.instance_transforms.inference}
-  limit: 200

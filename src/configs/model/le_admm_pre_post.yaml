@@ -1,0 +1,19 @@
+_target_: src.model.LeADMM
+
+n_iters: 5
+mu1_init: 1e-4
+mu2_init: 1e-4
+mu3_init: 1e-4
+tau_init: 2e-4
+
+preprocessor:
+  _target_: src.model.drunet.DRUNet
+  in_channels: 3
+  out_channels: 3
+  internal_channels: [ 32, 64, 116, 128 ]
+
+postprocessor:
+  _target_: src.model.drunet.DRUNet
+  in_channels: 3
+  out_channels: 3
+  internal_channels: [ 32, 64, 116, 128 ]
