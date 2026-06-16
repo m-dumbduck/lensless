@@ -33,7 +33,7 @@ writer:
 trainer:
   log_step: 100
   n_log_images: 4
-  n_epochs: 5
+  n_epochs: 20
   epoch_len: 2000
   device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
