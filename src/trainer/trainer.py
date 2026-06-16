@@ -79,14 +79,16 @@ class Trainer(BaseTrainer):
         if self.writer is None:
             return
 
-        lensless = batch["lensless"][0]
-        reconstructed = batch["reconstructed"][0]
-        lensed = batch["lensed"][0]
-
-        self.writer.add_image(
-            f"{mode}/comparison",
-            make_comparison_figure(lensless, reconstructed, lensed),
-        )
+        n_log_images = min(self.cfg_trainer.get("n_log_images", 4), batch["reconstructed"].shape[0])
+        for i in range(n_log_images):
+            self.writer.add_image(
+                f"{mode}/comparison_{i}",
+                make_comparison_figure(
+                    batch["lensless"][i],
+                    batch["reconstructed"][i],
+                    batch["lensed"][i],
+                ),
+            )
 
         if mode == "train":  # the method is called only every self.log_step steps
             # Log Stuff

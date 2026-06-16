@@ -31,7 +31,8 @@ writer:
   run_name: "le_admm_pre_post_train"
 
 trainer:
-  log_step: 5
+  log_step: 100
+  n_log_images: 4
   n_epochs: 5
   epoch_len: 2000
   device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
