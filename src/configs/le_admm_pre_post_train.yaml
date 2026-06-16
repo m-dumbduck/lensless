@@ -9,7 +9,7 @@ defaults:
 
 optimizer:
   _target_: torch.optim.Adam
-  lr: 1e-4
+  lr: 2e-4
 
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.LambdaLR
@@ -25,7 +25,7 @@ loss_function:
     _target_: src.loss.LPIPSLoss
     net: vgg
     normalize: true
-  lpips_loss_weight: 1
+  lpips_loss_weight: 0.1
 
 writer:
   run_name: "le_admm_pre_post_train"
