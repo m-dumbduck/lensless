@@ -1,5 +1,5 @@
 torch==2.10.0
-torchvision==0.17.0
+torchvision==0.25.0
 torchmetrics
 numpy==1.26.4
 tqdm
@@ -18,6 +18,9 @@ hydra-core
 huggingface_hub
 datasets
 safetensors
+
+gdown==5.2.0
+matplotlib
 
 black
 isort

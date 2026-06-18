@@ -8,13 +8,11 @@ from hydra.utils import instantiate
 from PIL import Image
 
 from src.lensless_helpers.preprocessor import (
-    ALIGNMENT,
+    CROPED_LENSED_SHAPE,
     convert_image_to_float,
     force_rgb,
-    get_cropped_lensed,
-    get_roi,
 )
-
+from src.lensless_helpers.utils import resize
 from src.metrics.tracker import MetricTracker
 
 
@@ -24,19 +22,6 @@ def load_image(path):
 
 def to_chw(image):
     return torch.from_numpy(image).permute(2, 0, 1)
-
-
-def align_ground_truth(image):
-    canvas_height = ALIGNMENT["top_left"][0] + ALIGNMENT["height"]
-    canvas_width = ALIGNMENT["top_left"][1] + ALIGNMENT["width"]
-    reference = np.zeros((canvas_height, canvas_width, 3))
-    return get_roi(get_cropped_lensed(image, reference))
-
-
-def build_metrics():
-    with initialize(version_base=None, config_path="src/configs/metrics"):
-        config = compose(config_name="base")
-    return instantiate(config.inference)
 
 
 def main():
@@ -49,7 +34,9 @@ def main():
     gt_dir = Path(args.gt)
     pred_dir = Path(args.pred)
 
-    metrics = build_metrics()
+    with initialize(version_base=None, config_path="src/configs/metrics"):
+        config = compose(config_name="base")
+    metrics = instantiate(config.inference)
     tracker = MetricTracker(*[metric.name for metric in metrics])
 
     matched = 0
@@ -59,8 +46,13 @@ def main():
             continue
         matched += 1
 
-        reconstructed = to_chw(load_image(pred_path)).unsqueeze(0).to(args.device)
-        lensed = to_chw(align_ground_truth(load_image(gt_path))).unsqueeze(0).to(args.device)
+        reconstructed = to_chw(
+            load_image(pred_path)
+        ).unsqueeze(0).to(args.device)
+
+        lensed = to_chw(
+            resize(load_image(gt_path), shape=CROPED_LENSED_SHAPE)
+        ).unsqueeze(0).to(args.device)
 
         for metric in metrics:
             tracker.update(metric.name, metric(reconstructed=reconstructed, lensed=lensed))
