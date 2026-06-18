@@ -552,7 +552,7 @@ class BaseTrainer:
         else:
             print(f"Loading model weights from: {pretrained_path} ...")
 
-        if getattr(self, "pretrained_type", "file"):
+        if getattr(self, "pretrained_type", "file") == "file":
             checkpoint = torch.load(pretrained_path, self.device, weights_only=False)
         elif self.pretrained_type == "hf":
             checkpoint = load_file(pretrained_path)
