@@ -1,6 +1,7 @@
 import torch
 from tqdm.auto import tqdm
 from torchvision.utils import save_image
+import time
 
 from src.lensless_helpers.preprocessor import get_roi
 from src.metrics.tracker import MetricTracker
@@ -29,6 +30,7 @@ class Inferencer(BaseTrainer):
         logger=None,
         batch_transforms=None,
         skip_model_load=False,
+        pretrained_type=None
     ):
         """
         Initialize the Inferencer.
@@ -58,6 +60,8 @@ class Inferencer(BaseTrainer):
 
         self.config = config
         self.cfg_trainer = self.config.inferencer
+
+        self.pretrained_type = pretrained_type
 
         self.device = device
 
@@ -129,37 +133,62 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        if not self.cfg_trainer.get("measure_speed", False):
+            outputs = self.model(**batch)
+        else:
+            outputs = self._forward_model(batch, batch_idx)
+
         batch.update(outputs)
 
-        batch["lensed"] = get_roi(batch["lensed"])
         batch["reconstructed"] = get_roi(batch["reconstructed"])
+        has_lensed = "lensed" in batch
+        if has_lensed:
+            batch["lensed"] = get_roi(batch["lensed"])
 
-        if metrics is not None:
+        if metrics is not None and has_lensed:
             for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
+                value = met(**batch)
+                if value is None:
+                    continue
+                metrics.update(met.name, value)
 
-        # Some saving logic. This is an example
-        # Use if you need to save predictions on disk
-
-        batch_size = batch["lensed"].shape[0]
-        current_id = batch_idx * batch_size
-
-        for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            output_id = current_id + i
-            if self.save_path is not None:
-                save_dir = self.save_path / part / f"{output_id}"
-                save_dir.mkdir(parents=True, exist_ok=True)
-                save_image(batch["lensless"][i], save_dir / f"lensless.png")
-                save_image(batch["lensed"][i], save_dir / f"lensed.png")
-                save_image(batch["reconstructed"][i], save_dir / f"reconstructed.png")
+        if self.save_path is not None:
+            n = batch["reconstructed"].shape[0]
+            save_dir = self.save_path / part
+            save_dir.mkdir(parents=True, exist_ok=True)
+            for i in range(n):
+                img_id = batch["id"][i] if "id" in batch.keys() else batch_idx * n + i
+                save_image(batch["reconstructed"][i], save_dir / f"{img_id}.png")
 
         return batch
 
+    def _sync_if_needed(self):
+        if str(self.device).startswith("cuda") and torch.cuda.is_available():
+            torch.cuda.synchronize()
+
+    def _forward_model(self, batch, batch_idx):
+        n_warmup = self.cfg_trainer.get("speed_num_warmup", 5)
+        runs_per_batch = self.cfg_trainer.get("speed_num_repeat", 1)
+
+        if batch_idx < n_warmup:
+            return self.model(**batch)
+
+        batch_size = batch["lensless"].shape[0]
+        times = []
+        outputs = {}
+        for _ in range(runs_per_batch):
+            self._sync_if_needed()
+            start = time.perf_counter()
+            outputs = self.model(**batch)
+            self._sync_if_needed()
+            elapsed = time.perf_counter() - start
+            times.append(1000 * elapsed / batch_size)
+
+        outputs["batch_time"] = sum(times) / len(times)
+        return outputs
+
     def _log_batch(self, batch_idx, batch, mode):
-        if self.writer is None:
+        if self.writer is None or "lensed" not in batch:
             return
 
         lensless = batch["lensless"][0]

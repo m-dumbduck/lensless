@@ -1,0 +1,30 @@
+defaults:
+  - model: le_admm_pre_post
+  - metrics: speed_measure
+  - writer: cometml
+  - datasets: lensless_eval_measure_speed
+  - dataloader: base
+  - transforms: base
+  - _self_
+
+trainer:
+  save_dir: "inference_logs"
+  override: True
+  resume_from: null
+
+writer:
+  run_name: "measure_speed"
+
+
+inferencer:
+  device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"
+  save_path: "example" # any name here, can be a dataset name
+  seed: 1
+  skip_model_load: False
+  log_step: 20
+  from_pretrained: "ldiujes/le-admm-pre-post"
+  from_pretrained_type: "hf"
+  measure_speed: true
+  speed_num_warmup: 5
+  speed_num_repeat: 5

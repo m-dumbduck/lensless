@@ -15,5 +15,6 @@ class Permute(nn.Module):
         Returns:
             x (Tensor): permuted tensor.
         """
-        x[self.data_object_key] = x[self.data_object_key].permute(self.order)
+        if self.data_object_key in x:
+            x[self.data_object_key] = x[self.data_object_key].permute(self.order)
         return x

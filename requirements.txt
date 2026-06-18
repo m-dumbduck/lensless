@@ -15,6 +15,9 @@ perlin_numpy @ git+https://github.com/pvigier/perlin-numpy.git@5e26837db14042e51
 wandb
 comet_ml
 hydra-core
+huggingface_hub
+datasets
+safetensors
 
 black
 isort

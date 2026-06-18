@@ -1,0 +1,29 @@
+defaults:
+  - model: le_admm_pre_post
+  - metrics: base
+  - writer: null
+  - datasets: custom_dir
+  - dataloader: base
+  - transforms: base
+  - _self_
+
+trainer:
+  save_dir: "inference_logs"
+  override: True
+  resume_from: null
+
+writer:
+  run_name: "inference"
+  id_length: 32
+
+
+inferencer:
+  device_tensors: ["lensed", "lensless", "psf"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"
+  save_path: "example" # any name here, can be a dataset name
+  seed: 1
+  skip_model_load: False
+  log_step: 5
+  from_pretrained: "ldiujes/le-admm-pre-post"
+  from_pretrained_type: "hf"
+  use_writer: false

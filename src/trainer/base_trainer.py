@@ -2,6 +2,7 @@ from abc import abstractmethod
 
 import torch
 from numpy import inf
+from safetensors.torch import load_file
 from torch.nn.utils import clip_grad_norm_
 from tqdm.auto import tqdm
 
@@ -345,6 +346,11 @@ class BaseTrainer:
                 the dataloader with some of the tensors on the device.
         """
         for tensor_for_device in self.cfg_trainer.device_tensors:
+            if tensor_for_device not in batch:
+                # 'lensed' is the only optional tensor
+                if tensor_for_device == "lensed":
+                    continue
+                raise KeyError(f"Required tensor '{tensor_for_device}' is missing from the batch.")
             batch[tensor_for_device] = batch[tensor_for_device].to(self.device)
         return batch
 
@@ -545,7 +551,13 @@ class BaseTrainer:
             self.logger.info(f"Loading model weights from: {pretrained_path} ...")
         else:
             print(f"Loading model weights from: {pretrained_path} ...")
-        checkpoint = torch.load(pretrained_path, self.device)
+
+        if getattr(self, "pretrained_type", "file"):
+            checkpoint = torch.load(pretrained_path, self.device, weights_only=False)
+        elif self.pretrained_type == "hf":
+            checkpoint = load_file(pretrained_path)
+        else:
+            raise ValueError("Unknown pretrained type. must be 'file' or 'hf'")
 
         if checkpoint.get("state_dict") is not None:
             self.model.load_state_dict(checkpoint["state_dict"])

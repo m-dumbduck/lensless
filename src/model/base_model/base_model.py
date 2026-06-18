@@ -1,8 +1,8 @@
 from torch import nn
-import torch
+from huggingface_hub import PyTorchModelHubMixin
 
 
-class BaseModel(nn.Module):
+class BaseModel(nn.Module, PyTorchModelHubMixin):
     def __init__(self, *args, **kwargs):
         super().__init__()
 

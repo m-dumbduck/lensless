@@ -1,0 +1,4 @@
+device: "auto"
+inference: # metrics that are calculated during inference (eval)
+  - _target_: src.metrics.SpeedMetric
+    name: speed_ms_per_image

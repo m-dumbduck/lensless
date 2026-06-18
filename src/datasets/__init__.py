@@ -1,1 +1,2 @@
 from src.datasets.lensless_dataset import LenslessDataset
+from src.datasets.custom_dir_dataset import CustomDirDataset

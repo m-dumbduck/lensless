@@ -1,7 +1,9 @@
 import warnings
+from pathlib import Path
 
 import hydra
 import torch
+from huggingface_hub import snapshot_download
 from hydra.utils import instantiate
 
 from src.datasets.data_utils import get_dataloaders
@@ -14,7 +16,7 @@ from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="inference_admm")
+@hydra.main(version_base=None, config_path="src/configs", config_name="inference")
 def main(config):
     """
     Main script for inference. Instantiates the model, metrics, and
@@ -28,7 +30,9 @@ def main(config):
 
     project_config = OmegaConf.to_container(config)
     logger = setup_saving_and_logging(config)
-    writer = instantiate(config.writer, logger, project_config)
+    writer = None
+    if config.inferencer.get("use_writer", True):
+        writer = instantiate(config.writer, logger, project_config)
 
     if config.inferencer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -38,6 +42,12 @@ def main(config):
     # setup data_loader instances
     # batch_transforms should be put on device
     dataloaders, batch_transforms = get_dataloaders(config, device)
+
+    if config.inferencer.get("from_pretrained_type") == "hf":
+        config.inferencer.from_pretrained = str(
+            Path(snapshot_download(repo_id=config.inferencer.from_pretrained))
+            / "model.safetensors"
+        )
 
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
@@ -61,6 +71,7 @@ def main(config):
         writer=writer,
         logger=logger,
         skip_model_load=config.inferencer.skip_model_load,
+        pretrained_type=config.inferencer.get("from_pretrained_type")
     )
 
     logs = inferencer.run_inference()

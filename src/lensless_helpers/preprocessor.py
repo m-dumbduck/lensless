@@ -70,6 +70,7 @@ def get_dataset_object(lensed, lensless, mask_vals):
     lensed = get_cropped_lensed(lensed, lensless)
     lensed = torch.from_numpy(lensed)
 
+    if mask_vals is None:
+        return lensed, lensless, None
     psf = simulate_psf_from_mask(mask_vals)
     return lensed, lensless, psf
-    
