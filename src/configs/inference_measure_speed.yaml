@@ -27,4 +27,4 @@ inferencer:
   from_pretrained_type: "hf"
   measure_speed: true
   speed_num_warmup: 5
-  speed_num_repeat: 5
+  speed_num_repeat: 10
